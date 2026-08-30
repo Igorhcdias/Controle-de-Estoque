@@ -8,6 +8,8 @@ from app.models import product as models
 from app.models import movement as movement_models
 from app.schemas import product as schemas
 from app.schemas import movement as movement_schemas
+from app.models import category as category_models
+from app.schemas import category as category_schemas
 
 app = FastAPI(title="API Controle de Estoque")
 
@@ -76,3 +78,21 @@ def create_movement(movement: movement_schemas.StockMovementCreate, db: Session 
     db.refresh(new_movement)
     
     return new_movement
+
+    # --- ROTAS DE CATEGORIAS ---
+
+@app.post("/categories/", response_model=category_schemas.CategoryResponse)
+def create_category(category: category_schemas.CategoryCreate, db: Session = Depends(get_db)):
+    db_category = category_models.Category(**category.dict())
+    db.add(db_category)
+    try:
+        db.commit()
+        db.refresh(db_category)
+        return db_category
+    except Exception:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="Erro ao cadastrar. O nome da categoria já existe.")
+
+@app.get("/categories/", response_model=List[category_schemas.CategoryResponse])
+def read_categories(db: Session = Depends(get_db)):
+    return db.query(category_models.Category).all()

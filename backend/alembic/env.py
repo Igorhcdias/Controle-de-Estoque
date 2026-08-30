@@ -11,6 +11,7 @@ sys.path.insert(0, diretorio_raiz)
 from app.core.database import Base
 from app.models.product import Product
 from app.models.movement import StockMovement
+from app.models.category import Category
 
 from alembic import context
 
