@@ -42,6 +42,9 @@ pip install -r requirements.txt
 
 ### Rodar o backend ###
 uvicorn app.main:app --reload
+python -m uvicorn app.main:app --reload
+
+
 
 ### Configurando o frontend ###
 

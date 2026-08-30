@@ -96,3 +96,50 @@ def create_category(category: category_schemas.CategoryCreate, db: Session = Dep
 @app.get("/categories/", response_model=List[category_schemas.CategoryResponse])
 def read_categories(db: Session = Depends(get_db)):
     return db.query(category_models.Category).all()
+
+@app.delete("/products/{product_id}")
+def delete_product(product_id: int, db: Session = Depends(get_db)):
+    product = db.query(models.Product).filter(models.Product.id == product_id).first()
+    
+    if not product:
+        raise HTTPException(status_code=404, detail="Produto não encontrado.")
+        
+    db.delete(product)
+    db.commit()
+    return {"message": "Produto excluído com sucesso."}
+
+@app.put("/products/{product_id}")
+def update_product(product_id: int, product_data: schemas.ProductCreate, db: Session = Depends(get_db)):
+    # Aqui estou usando o mesmo schema de criação (ProductCreate) pois o frontend envia name, sku e price
+    product = db.query(models.Product).filter(models.Product.id == product_id).first()
+    
+    if not product:
+        raise HTTPException(status_code=404, detail="Produto não encontrado.")
+        
+    product.name = product_data.name
+    product.sku = product_data.sku
+    product.price = product_data.price
+    
+    db.commit()
+    db.refresh(product)
+    return product
+
+    from sqlalchemy.exc import IntegrityError
+
+@app.delete("/categories/{category_id}")
+def delete_category(category_id: int, db: Session = Depends(get_db)):
+    category = db.query(models.Category).filter(models.Category.id == category_id).first()
+    
+    if not category:
+        raise HTTPException(status_code=404, detail="Categoria não encontrada.")
+        
+    try:
+        db.delete(category)
+        db.commit()
+        return {"message": "Categoria excluída com sucesso."}
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=400, 
+            detail="Não é possível excluir esta categoria pois existem produtos vinculados a ela."
+        )
