@@ -15,4 +15,4 @@ class Product(Base):
 
 
     category = relationship("Category", back_populates="products")
-    movements = relationship("StockMovement", back_populates="product")
+    movements = relationship("app.models.movement.StockMovement", back_populates="product", cascade="all, delete-orphan")
