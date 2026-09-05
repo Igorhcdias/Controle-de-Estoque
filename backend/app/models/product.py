@@ -1,6 +1,8 @@
 from sqlalchemy import Column, Integer, String, Numeric, ForeignKey
 from sqlalchemy.orm import relationship
 from app.core.database import Base
+from sqlalchemy import Column, Integer, String, Float, ForeignKey
+from sqlalchemy.orm import relationship
 
 class Product(Base):
     __tablename__ = "products"
@@ -10,9 +12,9 @@ class Product(Base):
     sku = Column(String(50), unique=True, index=True, nullable=False)
     price = Column(Numeric(10, 2), nullable=False)
     stock_quantity = Column(Integer, default=0)
-    
     category_id = Column(Integer, ForeignKey("categories.id"), nullable=True)
+    
 
 
-    category = relationship("Category", back_populates="products")
+    category = relationship("app.models.category.Category", back_populates="products")
     movements = relationship("app.models.movement.StockMovement", back_populates="product", cascade="all, delete-orphan")
