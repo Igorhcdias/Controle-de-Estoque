@@ -9,6 +9,7 @@ interface Product {
   sku: string;
   price: number;
   stock_quantity: number;
+  category_id?: number | null;
 }
 
   interface Category {
@@ -104,7 +105,7 @@ function Dashboard() {
           name: inputValue,
           sku: selectedProduct.sku,
           price: selectedProduct.price,
-          category_id: (selectedProduct as any).category_id
+          category_id: selectedProduct.category_id ?? null
         });
 
       } else if (modalView === 'DELETE') {
@@ -190,7 +191,7 @@ function Dashboard() {
                   <tr key={product.id} style={{ borderBottom: '1px solid #2a2a2a' }}>
                     <td style={tdStyle}>{product.id}</td>
                     <td style={tdStyle}>{product.name}</td>
-                    <td style={tdStyle}>{categories.find(c => c.id === (product as any).category_id)?.name || 'Sem categoria'}
+                    <td style={tdStyle}>{categories.find(c => c.id === product.category_id)?.name || 'Sem categoria'}
                     </td>
                     <td style={tdStyle}>{product.sku}</td>
                     <td style={tdStyle}>R$ {product.price.toFixed(2)}</td>
@@ -221,7 +222,7 @@ function Dashboard() {
 
         <hr style={{ margin: '48px 0', border: 'none', borderTop: '1px solid #2a2a2a' }} />
         <div style={{ backgroundColor: '#1e1e1e', padding: '24px', borderRadius: '12px', border: '1px solid #2a2a2a' }}>
-          <CategoryList />
+          <CategoryList categories={categories} onCategoryChange={fetchCategories} />
         </div>
 
       </div>

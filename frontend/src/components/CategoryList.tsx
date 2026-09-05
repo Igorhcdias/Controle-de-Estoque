@@ -2,15 +2,27 @@ import React, { useEffect, useState } from 'react';
 import { api } from '../services/api';
 import type { Category } from '../assets/types/category';
 
-export const CategoryList: React.FC = () => {
-  const [categories, setCategories] = useState<Category[]>([]);
+interface CategoryListProps {
+  categories?: Category[];
+  onCategoryChange?: () => void;
+}
+
+export const CategoryList: React.FC<CategoryListProps> = ({
+  categories: propCategories,
+  onCategoryChange,
+}) => {
+  const [internalCategories, setInternalCategories] = useState<Category[]>([]);
   const [newCategoryName, setNewCategoryName] = useState('');
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(false);
+
+  const isControlled = propCategories !== undefined;
+  const categories = isControlled ? propCategories : internalCategories;
 
   const fetchCategories = async () => {
     try {
+      setLoading(true);
       const response = await api.get('/categories/');
-      setCategories(response.data);
+      setInternalCategories(response.data);
     } catch (error) {
       console.error("Erro ao buscar as categorias:", error);
     } finally {
@@ -19,9 +31,10 @@ export const CategoryList: React.FC = () => {
   };
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    fetchCategories();
-  }, []);
+    if (!isControlled) {
+      fetchCategories();
+    }
+  }, [isControlled]);
 
   const handleCreateCategory = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,7 +43,11 @@ export const CategoryList: React.FC = () => {
     try {
       await api.post('/categories/', { name: newCategoryName });
       setNewCategoryName('');
-      fetchCategories();
+      if (onCategoryChange) {
+        onCategoryChange();
+      } else {
+        fetchCategories();
+      }
     } catch (error) {
       console.error("Erro ao criar categoria:", error);
       alert("Erro ao criar categoria.");
@@ -42,14 +59,18 @@ export const CategoryList: React.FC = () => {
     
     try {
       await api.delete(`/categories/${id}`);
-      fetchCategories();
+      if (onCategoryChange) {
+        onCategoryChange();
+      } else {
+        fetchCategories();
+      }
     } catch (error: any) {
       console.error("Erro ao excluir categoria:", error);
       alert(error.response?.data?.detail || "Erro ao excluir categoria.");
     }
   };
 
-  if (loading) return <p style={{ color: '#a0a0a0' }}>Carregando categorias...</p>;
+  if (!isControlled && loading) return <p style={{ color: '#a0a0a0' }}>Carregando categorias...</p>;
 
   return (
     <div>

@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from typing import List
 
 from app.core.database import SessionLocal
@@ -168,11 +169,9 @@ def update_product(product_id: int, product_data: schemas.ProductCreate, db: Ses
     db.refresh(product)
     return product
 
-    from sqlalchemy.exc import IntegrityError
-
 @app.delete("/categories/{category_id}")
 def delete_category(category_id: int, db: Session = Depends(get_db)):
-    category = db.query(models.Category).filter(models.Category.id == category_id).first()
+    category = db.query(category_models.Category).filter(category_models.Category.id == category_id).first()
     
     if not category:
         raise HTTPException(status_code=404, detail="Categoria não encontrada.")
