@@ -10,6 +10,11 @@ from app.schemas import product as schemas
 from app.schemas import movement as movement_schemas
 from app.models import category as category_models
 from app.schemas import category as category_schemas
+from app.models import user as user_models
+from app.schemas import user as user_schemas
+from app.core import security
+from fastapi.security import OAuth2PasswordRequestForm
+from datetime import timedelta
 
 app = FastAPI(title="API Controle de Estoque")
 
@@ -27,6 +32,45 @@ def get_db():
         yield db
     finally:
         db.close()
+
+# --- ROTAS DE AUTENTICAÇÃO ---
+
+@app.post("/users/", response_model=user_schemas.UserResponse)
+def create_user(user: user_schemas.UserCreate, db: Session = Depends(get_db)):
+    db_user = db.query(user_models.User).filter(user_models.User.username == user.username).first()
+    if db_user:
+        raise HTTPException(status_code=400, detail="Nome de usuário já registrado")
+    
+    db_email = db.query(user_models.User).filter(user_models.User.email == user.email).first()
+    if db_email:
+        raise HTTPException(status_code=400, detail="E-mail já registrado")
+        
+    hashed_password = security.get_password_hash(user.password)
+    new_user = user_models.User(
+        username=user.username,
+        email=user.email,
+        hashed_password=hashed_password
+    )
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    return new_user
+
+@app.post("/token", response_model=user_schemas.Token)
+def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    user = db.query(user_models.User).filter(user_models.User.username == form_data.username).first()
+    if not user or not security.verify_password(form_data.password, user.hashed_password):
+        raise HTTPException(
+            status_code=401,
+            detail="Nome de usuário ou senha incorretos",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    access_token_expires = timedelta(minutes=security.ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = security.create_access_token(
+        data={"sub": user.username}, expires_delta=access_token_expires
+    )
+    return {"access_token": access_token, "token_type": "bearer"}
+
 
 @app.post("/products/", response_model=schemas.ProductResponse)
 def create_product(product: schemas.ProductCreate, db: Session = Depends(get_db)):
@@ -110,7 +154,6 @@ def delete_product(product_id: int, db: Session = Depends(get_db)):
 
 @app.put("/products/{product_id}")
 def update_product(product_id: int, product_data: schemas.ProductCreate, db: Session = Depends(get_db)):
-    # Aqui estou usando o mesmo schema de criação (ProductCreate) pois o frontend envia name, sku e price
     product = db.query(models.Product).filter(models.Product.id == product_id).first()
     
     if not product:
@@ -119,6 +162,7 @@ def update_product(product_id: int, product_data: schemas.ProductCreate, db: Ses
     product.name = product_data.name
     product.sku = product_data.sku
     product.price = product_data.price
+    product.category_id = product_data.category_id
     
     db.commit()
     db.refresh(product)

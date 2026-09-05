@@ -1,8 +1,11 @@
 # Backend
 backend/venv/
-backend/__pycache__/
+venv/
+__pycache__/
+*.pyc
+*.pyo
 backend/alembic.ini
 
 # Frontend
-frontend/node_modules/
+node_modules/
 frontend/dist/

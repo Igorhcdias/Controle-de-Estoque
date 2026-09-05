@@ -5,7 +5,7 @@ class ProductCreate(BaseModel):
     name: str
     sku: str
     price: float
-    category_id: Optional[int] = None # <-- Adicione esta linha
+    category_id: Optional[int] = None
 
 class ProductResponse(ProductCreate):
     id: int
