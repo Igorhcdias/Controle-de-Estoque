@@ -281,7 +281,26 @@ def create_movement(
 
     return new_movement
 
+@app.get(
+    "/movements/",
+    response_model=List[movement_schemas.StockMovementResponse],
+)
+def read_movements(
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+    current_user: user_models.User = Depends(get_current_user),
+):
+    movements = (
+        db.query(movement_models.StockMovement)
+        .order_by(movement_models.StockMovement.created_at.desc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
 
+    return movements
+    
 # --- ROTAS DE CATEGORIAS ---
 
 
